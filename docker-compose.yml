@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+
+  php:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      MYSQLHOST: db
+      MYSQLPORT: 3306
+      MYSQLDATABASE: newspeper
+      MYSQLUSER: root
+      MYSQLPASSWORD: secret
+    volumes:
+      - ./uploads:/var/www/html/uploads   # persist uploaded images
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: newspeper
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database.sql:/docker-entrypoint-initdb.d/database.sql  # auto-imports on first run
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-usecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_data:
